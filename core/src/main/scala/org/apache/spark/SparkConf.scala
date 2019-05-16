@@ -168,6 +168,15 @@ class SparkConf(loadDefaults: Boolean) extends Cloneable with Logging with Seria
   }
 
   /** Set multiple parameters together */
+  def setAll(settings: Iterable[(String, String)]): SparkConf = {
+    settings.foreach { case (k, v) => set(k, v) }
+    this
+  }
+
+  /**
+   * Set multiple parameters together
+   */
+  @deprecated("Use setAll(Iterable) instead", "3.0.0")
   def setAll(settings: Traversable[(String, String)]): SparkConf = {
     settings.foreach { case (k, v) => set(k, v) }
     this
@@ -575,16 +584,6 @@ class SparkConf(loadDefaults: Boolean) extends Cloneable with Logging with Seria
       }
     }
 
-    if (contains(EXECUTOR_CORES) && contains(CPUS_PER_TASK)) {
-      val executorCores = get(EXECUTOR_CORES)
-      val taskCpus = get(CPUS_PER_TASK)
-
-      if (executorCores < taskCpus) {
-        throw new SparkException(
-          s"${EXECUTOR_CORES.key} must not be less than ${CPUS_PER_TASK.key}.")
-      }
-    }
-
     val encryptionEnabled = get(NETWORK_CRYPTO_ENABLED) || get(SASL_ENCRYPTION_ENABLED)
     require(!encryptionEnabled || get(NETWORK_AUTH_ENABLED),
       s"${NETWORK_AUTH_ENABLED.key} must be enabled when enabling encryption.")
@@ -715,7 +714,9 @@ private[spark] object SparkConf extends Logging {
       AlternateConfig("spark.yarn.kerberos.relogin.period", "3.0")),
     KERBEROS_FILESYSTEMS_TO_ACCESS.key -> Seq(
       AlternateConfig("spark.yarn.access.namenodes", "2.2"),
-      AlternateConfig("spark.yarn.access.hadoopFileSystems", "3.0"))
+      AlternateConfig("spark.yarn.access.hadoopFileSystems", "3.0")),
+    "spark.kafka.consumer.cache.capacity" -> Seq(
+      AlternateConfig("spark.sql.kafkaConsumerCache.capacity", "3.0"))
   )
 
   /**
